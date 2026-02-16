@@ -20,7 +20,7 @@ load_dotenv()
 CLIENT = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-def main():
+def get_stocks_recommendation(video_url: str) -> StocksRecommendation:
     video_url = "https://www.youtube.com/watch?v=UL5wRqEFLJ4"
 
     # Request structured output
@@ -38,6 +38,12 @@ def main():
 
     # Read the parsed data
     review: StocksRecommendation = response.parsed
+    return review
+
+
+def main():
+    video_url = "https://www.youtube.com/watch?v=UL5wRqEFLJ4"
+    review = get_stocks_recommendation(video_url)
     print(f"Buy: {review.buy_stocks}")
     print(f"Sell: {review.sell_stocks}")
     print(f"Hold: {review.hold_stocks}")
@@ -46,4 +52,5 @@ def main():
     print(f"Reasoning: {review.key_insights.reasoning}")
 
 
-main()
+if __name__ == "__main__":
+    main()
