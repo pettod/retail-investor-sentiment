@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List
 from dotenv import load_dotenv
 
-# Define your data schema
+# Data schema
 class YouTubeVideo(BaseModel):
     id: str
     url: str
@@ -13,14 +13,15 @@ class YouTubeVideo(BaseModel):
 
 # Setup API
 load_dotenv()
-youtube = build('youtube', 'v3', developerKey=os.getenv("YOUTUBE_API_KEY"))
+YOUTUBE = build('youtube', 'v3', developerKey=os.getenv("YOUTUBE_API_KEY"))
+
 
 def get_all_video_urls(channel_id: str) -> List[YouTubeVideo]:
     # A. Get the "Uploads" Playlist ID for the channel
     if channel_id.startswith("@"):
-        ch_request = youtube.channels().list(part="contentDetails", forHandle=channel_id)
+        ch_request = YOUTUBE.channels().list(part="contentDetails", forHandle=channel_id)
     else:
-        ch_request = youtube.channels().list(part="contentDetails", id=channel_id)
+        ch_request = YOUTUBE.channels().list(part="contentDetails", id=channel_id)
     ch_response = ch_request.execute()
 
     if not ch_response.get('items'):
@@ -33,7 +34,7 @@ def get_all_video_urls(channel_id: str) -> List[YouTubeVideo]:
     next_page_token = None
     
     while True:
-        pl_request = youtube.playlistItems().list(
+        pl_request = YOUTUBE.playlistItems().list(
             part="snippet",
             playlistId=uploads_playlist_id,
             maxResults=50,
@@ -57,9 +58,14 @@ def get_all_video_urls(channel_id: str) -> List[YouTubeVideo]:
             
     return videos
 
-# Example Usage
-channel_id = "@jeremylefebvre-clips"
-all_videos = get_all_video_urls(channel_id) 
-print(f"Found {len(all_videos)} videos")
-for v in all_videos[:10]:
-    print(f"{v.date} - {v.title}: {v.url}")
+
+def main():
+    channel_id = "@jeremylefebvre-clips"
+    all_videos = get_all_video_urls(channel_id) 
+    print(f"Found {len(all_videos)} videos")
+    for v in all_videos[:10]:
+        print(f"{v.date} - {v.title}: {v.url}")
+
+
+if __name__ == "__main__":
+    main()
