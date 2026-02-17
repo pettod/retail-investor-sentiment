@@ -15,10 +15,11 @@ class YouTubeVideo(BaseModel):
     date: str
 
 
-def get_all_video_urls(channel_id: str) -> List[YouTubeVideo]:
-    cached = load_videos()
-    if cached:
-        return cached
+def get_all_video_urls(channel_id: str, use_cache: bool = False) -> List[YouTubeVideo]:
+    if use_cache:
+        cached = load_videos()
+        if cached:
+            return cached
 
     # Get the "Uploads" Playlist ID for the channel
     if channel_id.startswith("@"):
@@ -107,7 +108,7 @@ def save_videos(videos: List[YouTubeVideo]):
 
 def main():
     channel_id = "@jeremylefebvre-clips"
-    all_videos = get_all_video_urls(channel_id) 
+    all_videos = get_all_video_urls(channel_id, use_cache=True) 
     print(f"Found {len(all_videos)} videos")
     all_videos = filter_out_shorts(all_videos)
     print(f"Found {len(all_videos)} videos after filtering out shorts")

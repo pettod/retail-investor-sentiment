@@ -1,7 +1,8 @@
 import os
 from google import genai
 from pydantic import BaseModel
-from dotenv import load_dotenv
+from config import GEMINI_API, GEMINI_MODEL
+
 
 # 1. Define your data structure
 class KeyInsights(BaseModel):
@@ -15,17 +16,13 @@ class StocksRecommendation(BaseModel):
     hold_stocks: list[str]
     key_insights: KeyInsights
 
-# Initialize the Gemini API client
-load_dotenv()
-CLIENT = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
 
 def get_stocks_recommendation(video_url: str) -> StocksRecommendation:
     video_url = "https://www.youtube.com/watch?v=UL5wRqEFLJ4"
 
     # Request structured output
-    response = CLIENT.models.generate_content(
-        model="gemini-2.5-flash",
+    response = GEMINI_API.models.generate_content(
+        model=GEMINI_MODEL,
         contents=[
             genai.types.Part.from_uri(file_uri=video_url, mime_type="video/mp4"),
             "Give me a review of which stocks the financial influencer in this video is likely to buy, sell, or hold.",
