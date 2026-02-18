@@ -1,3 +1,4 @@
 .env
 videos_cache.json
 .DS_Store
+*.pyc
