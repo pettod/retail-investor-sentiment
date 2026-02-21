@@ -1,19 +1,6 @@
 from google import genai
-from pydantic import BaseModel
 from config import GEMINI_API, GEMINI_MODEL
-
-
-# Data structure
-class KeyInsights(BaseModel):
-    market_sentiment: str
-    top_picks: str
-    reasoning: str
-
-class StocksRecommendation(BaseModel):
-    buy_stocks: list[str]
-    sell_stocks: list[str]
-    hold_stocks: list[str]
-    key_insights: KeyInsights
+from database import StocksRecommendation
 
 
 def get_stocks_recommendation(video_url: str) -> StocksRecommendation:

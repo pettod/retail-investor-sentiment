@@ -1,19 +1,10 @@
 import os
 import json
 import re
-from pydantic import BaseModel
 from typing import List
-from config import YOUTUBE_API
+from config import YOUTUBE_API, YouTubeVideo
 
 CACHE_FILE = "videos_cache.json"
-
-
-class YouTubeVideo(BaseModel):
-    id: str
-    url: str
-    title: str
-    date: str
-    duration: int = 0
 
 
 def get_all_video_urls(channel_id: str, use_cache: bool = False) -> List[YouTubeVideo]:
