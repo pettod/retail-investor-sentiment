@@ -11,10 +11,14 @@ class KeyInsights(BaseModel):
     top_picks: str
     reasoning: str
 
+class Stock(BaseModel):
+    company_name: str
+    ticker_symbol: str
+
 class StocksRecommendation(BaseModel):
-    buy_stocks: list[str]
-    sell_stocks: list[str]
-    hold_stocks: list[str]
+    buy_stocks: list[Stock]
+    sell_stocks: list[Stock]
+    hold_stocks: list[Stock]
     key_insights: KeyInsights
 
 class YouTubeVideo(BaseModel):
