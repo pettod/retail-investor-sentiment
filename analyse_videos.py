@@ -1,10 +1,9 @@
-import os
 from google import genai
 from pydantic import BaseModel
 from config import GEMINI_API, GEMINI_MODEL
 
 
-# 1. Define your data structure
+# Data structure
 class KeyInsights(BaseModel):
     market_sentiment: str
     top_picks: str
@@ -18,8 +17,6 @@ class StocksRecommendation(BaseModel):
 
 
 def get_stocks_recommendation(video_url: str) -> StocksRecommendation:
-    video_url = "https://www.youtube.com/watch?v=UL5wRqEFLJ4"
-
     # Request structured output
     response = GEMINI_API.models.generate_content(
         model=GEMINI_MODEL,
