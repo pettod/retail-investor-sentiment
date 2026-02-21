@@ -1,5 +1,5 @@
 from youtube import get_all_video_urls, filter_out_shorts
-from database import save_videos
+from database import save_recommendation, get_unanalyzed_videos
 from config import CHANNEL_IDS
 from analyse_videos import get_stocks_recommendation
 
@@ -9,15 +9,16 @@ def main():
         all_videos = get_all_video_urls(channel_id)[:10]
         all_videos = filter_out_shorts(all_videos)
         print(f"Found {len(all_videos)} videos for {channel_id}")
-        for v in all_videos:
-            if v.recommendation is not None:
-                print(f"Skipping (already analyzed): {v.title}")
-                continue
+
+        unanalyzed = get_unanalyzed_videos(channel_id)
+        print(f"{len(unanalyzed)} videos to analyze")
+
+        for v in unanalyzed:
             print(f"{v.date} - {v.title}: {v.url}")
             review = get_stocks_recommendation(v.url)
-            v.recommendation = review
+            save_recommendation(v.id, review)
             print(f"Review: {review}")
-        save_videos(channel_id, all_videos)
+            return # One video for testing
 
 
 if __name__ == "__main__":
