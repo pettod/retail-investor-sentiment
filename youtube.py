@@ -7,17 +7,18 @@ from config import YOUTUBE_API
 
 CACHE_FILE = "videos_cache.json"
 
-# Data schema
+
 class YouTubeVideo(BaseModel):
     id: str
     url: str
     title: str
     date: str
+    duration: int = 0
 
 
 def get_all_video_urls(channel_id: str, use_cache: bool = False) -> List[YouTubeVideo]:
     if use_cache:
-        cached = load_videos()
+        cached = load_videos(channel_id)
         if cached:
             return cached
 
@@ -60,50 +61,56 @@ def get_all_video_urls(channel_id: str, use_cache: bool = False) -> List[YouTube
         if not next_page_token:
             break
 
-    save_videos(videos)
-    return videos
-
-
-def filter_out_shorts(videos: List[YouTubeVideo]) -> List[YouTubeVideo]:
-    short_ids = set()
+    video_map = {v.id: v for v in videos}
     for i in range(0, len(videos), 50):
-        resp = YOUTUBE_API.videos().list(part="contentDetails", id=",".join(v.id for v in videos[i:i+50])).execute()
-
-        def parse_duration(duration):
-            # Duration comes in as an ISO 8601 string like 'PT33M8S'
-            pattern = re.compile(
-                r'PT'                                  # starts with 'PT'
-                r'(?:(?P<hours>\d+)H)?'                # hours
-                r'(?:(?P<minutes>\d+)M)?'              # minutes
-                r'(?:(?P<seconds>\d+)S)?'              # seconds
-            )
-            match = pattern.fullmatch(duration)
-            if not match:
-                return 0
-            parts = match.groupdict()
-            hours = int(parts["hours"] or 0)
-            minutes = int(parts["minutes"] or 0)
-            seconds = int(parts["seconds"] or 0)
-            return hours * 3600 + minutes * 60 + seconds
-
+        batch = videos[i:i+50]
+        resp = YOUTUBE_API.videos().list(
+            part="contentDetails",
+            id=",".join(v.id for v in batch),
+        ).execute()
         for item in resp["items"]:
-            total_seconds = parse_duration(item["contentDetails"]["duration"])
-            if total_seconds < 300: # 5 minutes
-                short_ids.add(item["id"])
-    videos = [v for v in videos if v.id not in short_ids]
+            video_map[item["id"]].duration = parse_duration(item["contentDetails"]["duration"])
+
+    save_videos(channel_id, videos)
     return videos
 
 
-def load_videos() -> List[YouTubeVideo] | None:
+def parse_duration(duration: str) -> int:
+    pattern = re.compile(
+        r'PT'
+        r'(?:(?P<hours>\d+)H)?'
+        r'(?:(?P<minutes>\d+)M)?'
+        r'(?:(?P<seconds>\d+)S)?'
+    )
+    match = pattern.fullmatch(duration)
+    if not match:
+        return 0
+    parts = match.groupdict()
+    return int(parts["hours"] or 0) * 3600 + int(parts["minutes"] or 0) * 60 + int(parts["seconds"] or 0)
+
+
+def filter_out_shorts(videos: List[YouTubeVideo], min_seconds: int = 300) -> List[YouTubeVideo]:
+    return [v for v in videos if v.duration >= min_seconds]
+
+
+def load_videos(channel_id: str) -> List[YouTubeVideo] | None:
     if not os.path.exists(CACHE_FILE):
         return None
     with open(CACHE_FILE) as f:
-        return [YouTubeVideo(**v) for v in json.load(f)]
+        data = json.load(f)
+    if channel_id not in data:
+        return None
+    return [YouTubeVideo(**v) for v in data[channel_id]]
 
 
-def save_videos(videos: List[YouTubeVideo]):
+def save_videos(channel_id: str, videos: List[YouTubeVideo]):
+    data = {}
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE) as f:
+            data = json.load(f)
+    data[channel_id] = [v.model_dump() for v in videos]
     with open(CACHE_FILE, "w") as f:
-        json.dump([v.model_dump() for v in videos], f, indent=4)
+        json.dump(data, f, indent=4)
 
 
 def main():
