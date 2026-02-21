@@ -1,4 +1,5 @@
-from youtube import get_all_video_urls, filter_out_shorts, save_videos
+from youtube import get_all_video_urls, filter_out_shorts
+from database import save_videos
 from config import CHANNEL_IDS
 from analyse_videos import get_stocks_recommendation
 
