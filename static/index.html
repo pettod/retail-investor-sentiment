@@ -551,12 +551,16 @@
                         </ul>
                     </div>
                     <div class="card">
-                        <div class="card-header"><span class="card-title">Top Hold Picks</span></div>
+                        <div class="card-header"><span class="card-title">Most Disagreed</span></div>
                         <ul class="stock-list card-body">
-                            ${stats.top_holds.slice(0, 10).map(([t, c]) => `
-                                <li class="stock-item" onclick="openStockDetail('${t}')">
-                                    <span class="stock-ticker">${t}</span>
-                                    <span class="stock-count hold-count">${c}</span>
+                            ${stats.most_disagreed.slice(0, 10).map(s => `
+                                <li class="stock-item" onclick="openStockDetail('${s.ticker}')">
+                                    <span class="stock-ticker">${s.ticker}</span>
+                                    <span style="display:flex;gap:0.25rem;align-items:center">
+                                        <span class="stock-count buy-count">${s.buy}</span>
+                                        <span class="stock-count sell-count">${s.sell}</span>
+                                        <span class="stock-count hold-count">${s.hold}</span>
+                                    </span>
                                 </li>
                             `).join('') || '<li class="empty-state">No data yet</li>'}
                         </ul>

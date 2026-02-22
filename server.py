@@ -115,11 +115,21 @@ def get_stats():
         sentiment = rec.get("key_insights", {}).get("market_sentiment", "unknown")
         sentiments[sentiment] += 1
 
+    all_tickers = set(buy_counts) | set(sell_counts) | set(hold_counts)
+    disagreed = []
+    for t in all_tickers:
+        b, s, h = buy_counts[t], sell_counts[t], hold_counts[t]
+        score = min(b, s) * 2 + min(b + s, h)
+        if score > 0:
+            disagreed.append({"ticker": t, "buy": b, "sell": s, "hold": h, "score": score})
+    disagreed.sort(key=lambda x: x["score"], reverse=True)
+
     return {
         "total_videos": len(rows),
         "top_buys": buy_counts.most_common(20),
         "top_sells": sell_counts.most_common(20),
         "top_holds": hold_counts.most_common(20),
+        "most_disagreed": disagreed[:20],
         "sentiment_distribution": dict(sentiments),
     }
 
@@ -154,4 +164,4 @@ def get_stock_mentions(ticker: str):
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)
