@@ -1,7 +1,7 @@
 import re
 from typing import List
 from config import YOUTUBE_API, YouTubeVideo
-from database import load_videos, save_videos
+from database import load_videos
 
 
 def get_all_video_urls(channel_id: str, use_cache: bool = False) -> List[YouTubeVideo]:
@@ -49,6 +49,7 @@ def get_all_video_urls(channel_id: str, use_cache: bool = False) -> List[YouTube
         if not next_page_token:
             break
 
+    # Get duration
     video_map = {v.id: v for v in videos}
     for i in range(0, len(videos), 50):
         batch = videos[i:i+50]
@@ -59,7 +60,6 @@ def get_all_video_urls(channel_id: str, use_cache: bool = False) -> List[YouTube
         for item in resp["items"]:
             video_map[item["id"]].duration = parse_duration(item["contentDetails"]["duration"])
 
-    save_videos(channel_id, videos)
     return videos
 
 
