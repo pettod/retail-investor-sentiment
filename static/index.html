@@ -699,6 +699,7 @@
 
         function closeStockDetail() { $('#stock-overlay').classList.remove('active'); }
         $('#stock-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeStockDetail(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStockDetail(); });
 
         // Init
         loadOverview();
