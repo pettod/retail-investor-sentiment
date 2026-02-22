@@ -1,7 +1,7 @@
 import re
 from typing import List
-from config import YOUTUBE_API, YouTubeVideo
-from database import load_videos
+from src.config import YOUTUBE_API, YouTubeVideo
+from src.database import load_videos
 
 
 def get_all_video_urls(channel_id: str, use_cache: bool = False) -> List[YouTubeVideo]:
@@ -79,17 +79,3 @@ def parse_duration(duration: str) -> int:
 
 def filter_out_shorts(videos: List[YouTubeVideo], min_seconds: int = 300) -> List[YouTubeVideo]:
     return [v for v in videos if v.duration >= min_seconds]
-
-
-def main():
-    channel_id = "@jeremylefebvre-clips"
-    all_videos = get_all_video_urls(channel_id, use_cache=True) 
-    print(f"Found {len(all_videos)} videos")
-    all_videos = filter_out_shorts(all_videos)
-    print(f"Found {len(all_videos)} videos after filtering out shorts")
-    for v in all_videos[:10]:
-        print(f"{v.date} - {v.title}: {v.url}")
-
-
-if __name__ == "__main__":
-    main()

@@ -1,7 +1,7 @@
 import json
 import sqlite3
 from typing import List
-from config import YouTubeVideo, StocksRecommendation, DB_FILE
+from src.config import YouTubeVideo, StocksRecommendation, DB_FILE
 
 
 def get_connection() -> sqlite3.Connection:

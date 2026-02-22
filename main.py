@@ -1,7 +1,7 @@
-from youtube import get_all_video_urls, filter_out_shorts
-from database import save_recommendation, get_unanalyzed_videos, save_videos
-from config import CHANNEL_IDS
-from analyse_videos import get_stocks_recommendation
+from src.youtube import get_all_video_urls, filter_out_shorts
+from src.database import save_recommendation, get_unanalyzed_videos, save_videos
+from src.config import CHANNEL_IDS
+from src.analyse_videos import get_stocks_recommendation
 
 
 def main():
