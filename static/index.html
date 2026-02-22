@@ -447,8 +447,18 @@
         const $$ = s => document.querySelectorAll(s);
 
         async function fetchJSON(url) {
-            const res = await fetch(url);
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
             return res.json();
+        }
+
+        function showError(container, message) {
+            $(container).innerHTML = `
+                <div class="empty-state" style="padding:3rem;text-align:center">
+                    <div style="font-size:1.25rem;font-weight:600;margin-bottom:0.5rem">Unable to load data</div>
+                    <div style="color:var(--muted);font-size:0.8125rem">${message}</div>
+                    <div style="color:var(--muted);font-size:0.75rem;margin-top:0.75rem">Make sure the API server is running on port 8000</div>
+                </div>`;
         }
 
         function formatDate(dateStr) {
@@ -478,7 +488,13 @@
 
         // Overview
         async function loadOverview() {
-            const [stats, channels] = await Promise.all([fetchJSON('/api/stats'), fetchJSON('/api/channels')]);
+            let stats, channels;
+            try {
+                [stats, channels] = await Promise.all([fetchJSON('/api/stats'), fetchJSON('/api/channels')]);
+            } catch (e) {
+                showError('#overview-view', e.message);
+                return;
+            }
             statsData = stats;
             channelsData = channels;
 
@@ -567,7 +583,13 @@
             if (videoFilters.analyzed === 'true') url += `&analyzed=true`;
             if (videoFilters.analyzed === 'false') url += `&analyzed=false`;
 
-            const data = await fetchJSON(url);
+            let data;
+            try {
+                data = await fetchJSON(url);
+            } catch (e) {
+                showError('#videos-view', e.message);
+                return;
+            }
             if (reset) videosCache = data;
             else { videosCache.videos.push(...data.videos); videosCache.total = data.total; }
 
@@ -685,7 +707,13 @@
             $('#stock-detail-ticker').textContent = ticker;
             $('#stock-detail-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
 
-            const data = await fetchJSON(`/api/stock/${encodeURIComponent(ticker)}`);
+            let data;
+            try {
+                data = await fetchJSON(`/api/stock/${encodeURIComponent(ticker)}`);
+            } catch (e) {
+                $('#stock-detail-list').innerHTML = `<li class="empty-state">${e.message}</li>`;
+                return;
+            }
             $('#stock-detail-list').innerHTML = data.mentions.length
                 ? data.mentions.map(m => `
                     <li class="mention-item">

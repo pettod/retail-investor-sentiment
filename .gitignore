@@ -1,5 +1,5 @@
 .env
-*.json
+videos*.json
 .DS_Store
 *.pyc
 *.db*

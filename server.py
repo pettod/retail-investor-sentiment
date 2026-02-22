@@ -1,14 +1,23 @@
 import json
 import sqlite3
 from collections import Counter
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from typing import Optional
+import uvicorn
 
-DB_FILE = "videos.db"
+DB_FILE = "videos_demo.db"
 
 app = FastAPI(title="Retail Investor Sentiment API")
+
+
+@app.middleware("http")
+async def no_cache_api(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def get_db() -> sqlite3.Connection:
@@ -143,3 +152,6 @@ def get_stock_mentions(ticker: str):
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)

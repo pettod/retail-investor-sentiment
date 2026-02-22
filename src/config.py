@@ -39,4 +39,10 @@ GEMINI_MODEL = "gemini-2.5-flash"
 CHANNEL_IDS = [
     "@jeremylefebvre-clips",
     "@EverythingMoney",
+    "@JosephCarlsonShow",
+    "@DividendTalks",
+    "@FinancialEducation",
+    "@jeremylefebvremakesmoney7934",
+    "@SashaYanshin",
+    "@TomNashTV",
 ]
