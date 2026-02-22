@@ -2,3 +2,5 @@ google-genai
 pydantic
 python-dotenv
 google-api-python-client
+fastapi
+uvicorn

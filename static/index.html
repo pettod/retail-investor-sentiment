@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Investor Sentiment</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #ffffff;
+            --fg: #030213;
+            --muted: #717182;
+            --muted-bg: #f3f3f5;
+            --border: rgba(0, 0, 0, 0.1);
+            --accent: #e9ebef;
+            --green: #16a34a;
+            --green-bg: #f0fdf4;
+            --red: #dc2626;
+            --red-bg: #fef2f2;
+            --blue: #2563eb;
+            --blue-bg: #eff6ff;
+            --yellow: #ca8a04;
+            --yellow-bg: #fefce8;
+            --radius: 0.75rem;
+            --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--fg);
+            font-size: 14px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            color: var(--fg);
+        }
+
+        .logo span { color: var(--muted); font-weight: 400; }
+
+        .nav-pills {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--muted-bg);
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+        }
+
+        .nav-pill {
+            padding: 0.375rem 0.875rem;
+            border-radius: 0.375rem;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: var(--font);
+        }
+
+        .nav-pill:hover { color: var(--fg); }
+        .nav-pill.active { background: #fff; color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+        .main { padding: 2rem 0 4rem; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .stat-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            transition: box-shadow 0.15s ease;
+        }
+
+        .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .stat-label { font-size: 0.75rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-value { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.025em; margin-top: 0.25rem; }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            margin-bottom: 1rem;
+        }
+
+        .card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title { font-size: 0.875rem; font-weight: 600; }
+        .card-body { padding: 0; }
+
+        .stocks-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) { .stocks-grid { grid-template-columns: 1fr; } }
+
+        .stock-list { list-style: none; }
+
+        .stock-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.625rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s ease;
+            cursor: pointer;
+        }
+
+        .stock-item:last-child { border-bottom: none; }
+        .stock-item:hover { background: var(--muted-bg); }
+
+        .stock-ticker {
+            font-weight: 600;
+            font-size: 0.8125rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        .stock-count {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+        }
+
+        .buy-count { background: var(--green-bg); color: var(--green); }
+        .sell-count { background: var(--red-bg); color: var(--red); }
+        .hold-count { background: var(--blue-bg); color: var(--blue); }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.6875rem;
+            font-weight: 500;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            white-space: nowrap;
+        }
+
+        .badge-buy { background: var(--green-bg); color: var(--green); }
+        .badge-sell { background: var(--red-bg); color: var(--red); }
+        .badge-hold { background: var(--blue-bg); color: var(--blue); }
+        .badge-pending { background: var(--muted-bg); color: var(--muted); }
+        .badge-sentiment { background: var(--yellow-bg); color: var(--yellow); }
+
+        .video-list { list-style: none; }
+
+        .video-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s ease;
+        }
+
+        .video-item:last-child { border-bottom: none; }
+        .video-item:hover { background: var(--muted-bg); }
+
+        .video-title {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--fg);
+            text-decoration: none;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .video-title:hover { text-decoration: underline; }
+
+        .video-meta {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.25rem;
+            font-size: 0.6875rem;
+            color: var(--muted);
+        }
+
+        .video-badges { display: flex; gap: 0.375rem; flex-wrap: wrap; justify-content: flex-end; }
+
+        .search-input {
+            width: 100%;
+            padding: 0.5rem 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.8125rem;
+            font-family: var(--font);
+            background: var(--muted-bg);
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .search-input:focus { border-color: var(--fg); background: var(--bg); }
+
+        .filter-bar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .filter-bar select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.8125rem;
+            font-family: var(--font);
+            background: var(--muted-bg);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+
+        .load-more {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            background: var(--muted-bg);
+            color: var(--fg);
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: background 0.15s ease;
+        }
+
+        .load-more:hover { background: var(--accent); }
+
+        .sentiment-grid {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            padding: 1.25rem;
+        }
+
+        .sentiment-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            background: var(--muted-bg);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .sentiment-chip .count {
+            background: var(--fg);
+            color: var(--bg);
+            padding: 0.0625rem 0.375rem;
+            border-radius: 9999px;
+            font-size: 0.6875rem;
+        }
+
+        .stock-detail-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .stock-detail-overlay.active { opacity: 1; pointer-events: all; }
+
+        .stock-detail-panel {
+            background: var(--bg);
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+
+        .stock-detail-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stock-detail-header h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        .close-btn {
+            border: none;
+            background: var(--muted-bg);
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+        }
+
+        .close-btn:hover { background: var(--accent); color: var(--fg); }
+
+        .mention-list { list-style: none; }
+
+        .mention-item {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .mention-item:last-child { border-bottom: none; }
+        .mention-title { font-size: 0.8125rem; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mention-date { font-size: 0.6875rem; color: var(--muted); white-space: nowrap; }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--muted);
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--border);
+            border-top-color: var(--fg);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container header-inner">
+            <div class="logo">Sentiment <span>Dashboard</span></div>
+            <nav class="nav-pills">
+                <button class="nav-pill active" data-view="overview">Overview</button>
+                <button class="nav-pill" data-view="videos">Videos</button>
+                <button class="nav-pill" data-view="stocks">Stocks</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div id="overview-view"></div>
+            <div id="videos-view" style="display:none"></div>
+            <div id="stocks-view" style="display:none"></div>
+        </div>
+    </main>
+
+    <div class="stock-detail-overlay" id="stock-overlay">
+        <div class="stock-detail-panel">
+            <div class="stock-detail-header">
+                <h2 id="stock-detail-ticker"></h2>
+                <button class="close-btn" onclick="closeStockDetail()">&times;</button>
+            </div>
+            <ul class="mention-list" id="stock-detail-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        let statsData = null;
+        let channelsData = null;
+        let videosCache = { videos: [], total: 0 };
+        let currentView = 'overview';
+        let videoFilters = { channel: '', analyzed: '', search: '' };
+        let videoOffset = 0;
+
+        const $ = s => document.querySelector(s);
+        const $$ = s => document.querySelectorAll(s);
+
+        async function fetchJSON(url) {
+            const res = await fetch(url);
+            return res.json();
+        }
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatDuration(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m ${s}s`;
+        }
+
+        // Navigation
+        $$('.nav-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                $$('.nav-pill').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentView = btn.dataset.view;
+                ['overview', 'videos', 'stocks'].forEach(v => {
+                    $(`#${v}-view`).style.display = v === currentView ? '' : 'none';
+                });
+                if (currentView === 'videos' && videosCache.videos.length === 0) loadVideos(true);
+            });
+        });
+
+        // Overview
+        async function loadOverview() {
+            const [stats, channels] = await Promise.all([fetchJSON('/api/stats'), fetchJSON('/api/channels')]);
+            statsData = stats;
+            channelsData = channels;
+
+            const totalVideos = channels.reduce((a, c) => a + c.video_count, 0);
+            const totalAnalyzed = channels.reduce((a, c) => a + c.analyzed_count, 0);
+            const totalChannels = channels.length;
+            const uniqueStocks = new Set([
+                ...stats.top_buys.map(s => s[0]),
+                ...stats.top_sells.map(s => s[0]),
+                ...stats.top_holds.map(s => s[0]),
+            ]).size;
+
+            $('#overview-view').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Videos</div>
+                        <div class="stat-value">${totalVideos.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Analyzed</div>
+                        <div class="stat-value">${totalAnalyzed.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Channels</div>
+                        <div class="stat-value">${totalChannels}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Unique Stocks</div>
+                        <div class="stat-value">${uniqueStocks}</div>
+                    </div>
+                </div>
+
+                <div class="stocks-grid">
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Top Buy Picks</span></div>
+                        <ul class="stock-list card-body">
+                            ${stats.top_buys.slice(0, 10).map(([t, c]) => `
+                                <li class="stock-item" onclick="openStockDetail('${t}')">
+                                    <span class="stock-ticker">${t}</span>
+                                    <span class="stock-count buy-count">${c}</span>
+                                </li>
+                            `).join('') || '<li class="empty-state">No data yet</li>'}
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Top Sell Picks</span></div>
+                        <ul class="stock-list card-body">
+                            ${stats.top_sells.slice(0, 10).map(([t, c]) => `
+                                <li class="stock-item" onclick="openStockDetail('${t}')">
+                                    <span class="stock-ticker">${t}</span>
+                                    <span class="stock-count sell-count">${c}</span>
+                                </li>
+                            `).join('') || '<li class="empty-state">No data yet</li>'}
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Top Hold Picks</span></div>
+                        <ul class="stock-list card-body">
+                            ${stats.top_holds.slice(0, 10).map(([t, c]) => `
+                                <li class="stock-item" onclick="openStockDetail('${t}')">
+                                    <span class="stock-ticker">${t}</span>
+                                    <span class="stock-count hold-count">${c}</span>
+                                </li>
+                            `).join('') || '<li class="empty-state">No data yet</li>'}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Market Sentiment</span></div>
+                    <div class="sentiment-grid card-body">
+                        ${Object.entries(stats.sentiment_distribution).map(([s, c]) => `
+                            <div class="sentiment-chip">${s} <span class="count">${c}</span></div>
+                        `).join('') || '<div class="empty-state">No data yet</div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Videos
+        async function loadVideos(reset = false) {
+            if (reset) { videoOffset = 0; videosCache = { videos: [], total: 0 }; }
+
+            let url = `/api/videos?limit=30&offset=${videoOffset}`;
+            if (videoFilters.channel) url += `&channel_id=${encodeURIComponent(videoFilters.channel)}`;
+            if (videoFilters.analyzed === 'true') url += `&analyzed=true`;
+            if (videoFilters.analyzed === 'false') url += `&analyzed=false`;
+
+            const data = await fetchJSON(url);
+            if (reset) videosCache = data;
+            else { videosCache.videos.push(...data.videos); videosCache.total = data.total; }
+
+            renderVideos();
+        }
+
+        function renderVideos() {
+            if (!channelsData) return;
+            const filtered = videoFilters.search
+                ? videosCache.videos.filter(v => v.title.toLowerCase().includes(videoFilters.search.toLowerCase()))
+                : videosCache.videos;
+
+            $('#videos-view').innerHTML = `
+                <div class="filter-bar">
+                    <input class="search-input" style="max-width:300px" placeholder="Search videos..." value="${videoFilters.search}" oninput="videoFilters.search=this.value; renderVideos()">
+                    <select onchange="videoFilters.channel=this.value; loadVideos(true)">
+                        <option value="">All Channels</option>
+                        ${channelsData.map(c => `<option value="${c.channel_id}" ${videoFilters.channel === c.channel_id ? 'selected' : ''}>${c.channel_id}</option>`).join('')}
+                    </select>
+                    <select onchange="videoFilters.analyzed=this.value; loadVideos(true)">
+                        <option value="" ${videoFilters.analyzed === '' ? 'selected' : ''}>All</option>
+                        <option value="true" ${videoFilters.analyzed === 'true' ? 'selected' : ''}>Analyzed</option>
+                        <option value="false" ${videoFilters.analyzed === 'false' ? 'selected' : ''}>Pending</option>
+                    </select>
+                </div>
+                <div class="card">
+                    <ul class="video-list card-body">
+                        ${filtered.map(v => {
+                            const rec = v.recommendation;
+                            const badges = rec
+                                ? [
+                                    ...rec.buy_stocks.map(s => `<span class="badge badge-buy">${s.ticker_symbol || s}</span>`),
+                                    ...rec.sell_stocks.map(s => `<span class="badge badge-sell">${s.ticker_symbol || s}</span>`),
+                                    ...rec.hold_stocks.map(s => `<span class="badge badge-hold">${s.ticker_symbol || s}</span>`),
+                                ]
+                                : ['<span class="badge badge-pending">Pending</span>'];
+                            return `
+                                <li class="video-item">
+                                    <div>
+                                        <a class="video-title" href="${v.url}" target="_blank">${v.title}</a>
+                                        <div class="video-meta">
+                                            <span>${formatDate(v.date)}</span>
+                                            <span>${formatDuration(v.duration)}</span>
+                                            <span>${v.channel_id}</span>
+                                        </div>
+                                    </div>
+                                    <div class="video-badges">${badges.slice(0, 6).join('')}${badges.length > 6 ? `<span class="badge badge-pending">+${badges.length - 6}</span>` : ''}</div>
+                                </li>
+                            `;
+                        }).join('') || '<li class="empty-state">No videos found</li>'}
+                    </ul>
+                    ${videosCache.videos.length < videosCache.total ? `<button class="load-more" onclick="videoOffset+=30; loadVideos()">Load more (${videosCache.videos.length} of ${videosCache.total})</button>` : ''}
+                </div>
+            `;
+        }
+
+        // Stocks
+        function renderStocks() {
+            if (!statsData) return;
+            const allStocks = new Map();
+            statsData.top_buys.forEach(([t, c]) => { const e = allStocks.get(t) || { buy: 0, sell: 0, hold: 0 }; e.buy = c; allStocks.set(t, e); });
+            statsData.top_sells.forEach(([t, c]) => { const e = allStocks.get(t) || { buy: 0, sell: 0, hold: 0 }; e.sell = c; allStocks.set(t, e); });
+            statsData.top_holds.forEach(([t, c]) => { const e = allStocks.get(t) || { buy: 0, sell: 0, hold: 0 }; e.hold = c; allStocks.set(t, e); });
+
+            const sorted = [...allStocks.entries()].sort((a, b) => {
+                const totalA = a[1].buy + a[1].sell + a[1].hold;
+                const totalB = b[1].buy + b[1].sell + b[1].hold;
+                return totalB - totalA;
+            });
+
+            $('#stocks-view').innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">All Stock Mentions</span>
+                        <span style="font-size:0.75rem;color:var(--muted)">${sorted.length} stocks tracked</span>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.8125rem">
+                            <thead>
+                                <tr style="border-bottom:1px solid var(--border);text-align:left">
+                                    <th style="padding:0.625rem 1.25rem;font-weight:600;color:var(--muted);font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.05em">Ticker</th>
+                                    <th style="padding:0.625rem 1rem;font-weight:600;color:var(--green);font-size:0.6875rem;text-transform:uppercase;text-align:center">Buy</th>
+                                    <th style="padding:0.625rem 1rem;font-weight:600;color:var(--red);font-size:0.6875rem;text-transform:uppercase;text-align:center">Sell</th>
+                                    <th style="padding:0.625rem 1rem;font-weight:600;color:var(--blue);font-size:0.6875rem;text-transform:uppercase;text-align:center">Hold</th>
+                                    <th style="padding:0.625rem 1.25rem;font-weight:600;color:var(--muted);font-size:0.6875rem;text-transform:uppercase;text-align:center">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sorted.map(([ticker, counts]) => `
+                                    <tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="openStockDetail('${ticker}')" onmouseover="this.style.background='var(--muted-bg)'" onmouseout="this.style.background=''">
+                                        <td style="padding:0.625rem 1.25rem;font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">${ticker}</td>
+                                        <td style="padding:0.625rem 1rem;text-align:center">${counts.buy ? `<span class="badge badge-buy">${counts.buy}</span>` : '<span style="color:var(--muted)">-</span>'}</td>
+                                        <td style="padding:0.625rem 1rem;text-align:center">${counts.sell ? `<span class="badge badge-sell">${counts.sell}</span>` : '<span style="color:var(--muted)">-</span>'}</td>
+                                        <td style="padding:0.625rem 1rem;text-align:center">${counts.hold ? `<span class="badge badge-hold">${counts.hold}</span>` : '<span style="color:var(--muted)">-</span>'}</td>
+                                        <td style="padding:0.625rem 1.25rem;text-align:center;font-weight:600">${counts.buy + counts.sell + counts.hold}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        $$('.nav-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.view === 'stocks') renderStocks();
+            });
+        });
+
+        // Stock detail
+        async function openStockDetail(ticker) {
+            const overlay = $('#stock-overlay');
+            overlay.classList.add('active');
+            $('#stock-detail-ticker').textContent = ticker;
+            $('#stock-detail-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+
+            const data = await fetchJSON(`/api/stock/${encodeURIComponent(ticker)}`);
+            $('#stock-detail-list').innerHTML = data.mentions.length
+                ? data.mentions.map(m => `
+                    <li class="mention-item">
+                        <span class="mention-title">${m.title}</span>
+                        <span class="badge badge-${m.action}">${m.action}</span>
+                        <span class="mention-date">${formatDate(m.date)}</span>
+                    </li>
+                `).join('')
+                : '<li class="empty-state">No mentions found</li>';
+        }
+
+        function closeStockDetail() { $('#stock-overlay').classList.remove('active'); }
+        $('#stock-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeStockDetail(); });
+
+        // Init
+        loadOverview();
+    </script>
+</body>
+</html>

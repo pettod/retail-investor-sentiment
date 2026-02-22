@@ -2,4 +2,5 @@
 *.json
 .DS_Store
 *.pyc
-*.db
+*.db*
+node_modules/
